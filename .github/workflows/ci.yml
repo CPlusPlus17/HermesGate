@@ -1,0 +1,54 @@
+name: Continuous Integration
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test-rust:
+    name: Rust Check & Test Suite
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo dependencies
+        uses: Swatinem/rust-cache@v2
+
+      - name: Check workspace
+        run: cargo check --workspace
+
+      - name: Run unit & integration tests
+        run: cargo test --workspace --verbose
+
+  lint-helm:
+    name: Helm Chart Lint & Validate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.14.0
+
+      - name: Lint HermesGate Chart
+        run: helm lint charts/hermesgate
+
+      - name: Test Helm Template Rendering (Default)
+        run: helm template test-default charts/hermesgate
+
+      - name: Test Helm Template Rendering (With Ingress & Secret)
+        run: |
+          helm template test-custom charts/hermesgate \
+            --set ingress.enabled=true \
+            --set ingress.className=nginx \
+            --set config.adminToken=test_admin_token_12345
