@@ -1,0 +1,20 @@
+apiVersion: v2
+name: hermesgate
+description: A Helm chart for SMS Forwarder - Multi-device SMS ingestion, Web UI, MCP AI Interface, and REST API.
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+icon: https://raw.githubusercontent.com/google/material-design-icons/master/png/communication/textsms/materialicons/48dp/2x/baseline_textsms_black_48dp.png
+keywords:
+  - sms
+  - 2fa
+  - otp
+  - mcp
+  - model-context-protocol
+  - rust
+  - automation
+home: https://github.com/CPlusPlus17/HermesGate
+sources:
+  - https://github.com/CPlusPlus17/HermesGate
+maintainers:
+  - name: HermesGate Team

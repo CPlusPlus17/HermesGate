@@ -1,0 +1,16 @@
+#!/bin/sh
+# Gradle start up script for POSIX systems
+exec java -version >/dev/null 2>&1 || { echo "Java not found"; exit 1; }
+APP_BASE_NAME=`basename "$0"`
+APP_HOME=`cd "\`dirname \"$0\"\`" && pwd -P`
+CLASSPATH=$APP_HOME/gradle/wrapper/gradle-wrapper.jar
+if [ ! -e "$CLASSPATH" ]; then
+    echo "Downloading gradle wrapper jar..."
+    curl -sLo "$CLASSPATH" "https://raw.githubusercontent.com/gradle/gradle/master/gradle/wrapper/gradle-wrapper.jar" 2>/dev/null || true
+fi
+if [ -e "$CLASSPATH" ]; then
+    exec java -jar "$CLASSPATH" "$@"
+else
+    echo "Gradle wrapper jar not found. Please install gradle or build using Android Studio."
+    exit 1
+fi

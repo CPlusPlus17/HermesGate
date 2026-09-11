@@ -1,0 +1,42 @@
+========================================================================
+🚀 SMS Forwarder has been deployed successfully!
+========================================================================
+
+1. Get the application URL:
+{{- if .Values.ingress.enabled }}
+{{- range $host := .Values.ingress.hosts }}
+  http{{ if $.Values.ingress.tls }}s{{ end }}://{{ $host.host }}
+{{- end }}
+{{- else if contains "NodePort" .Values.service.type }}
+  export NODE_PORT=$(kubectl get --namespace {{ .Release.Namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ include "hermesgate.fullname" . }})
+  export NODE_IP=$(kubectl get nodes --namespace {{ .Release.Namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo http://$NODE_IP:$NODE_PORT
+{{- else if contains "LoadBalancer" .Values.service.type }}
+  NOTE: It may take a few minutes for the LoadBalancer IP to be available.
+        Watch with: kubectl get svc --namespace {{ .Release.Namespace }} -w {{ include "hermesgate.fullname" . }}
+  export SERVICE_IP=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ include "hermesgate.fullname" . }} --template "{{"{{ range (index .status.loadBalancer.ingress 0) }}{{.}}{{ end }}"}}")
+  echo http://$SERVICE_IP:{{ .Values.service.port }}
+{{- else if contains "ClusterIP" .Values.service.type }}
+  Forward the service port to your local machine:
+  kubectl --namespace {{ .Release.Namespace }} port-forward svc/{{ include "hermesgate.fullname" . }} 8080:{{ .Values.service.port }}
+  Then open: http://localhost:8080
+{{- end }}
+
+2. Retrieve your Master Admin Token:
+{{- if or .Values.config.adminToken .Values.config.existingSecret }}
+  Your Master Admin Token is stored in secret '{{ include "hermesgate.secretName" . }}':
+  kubectl --namespace {{ .Release.Namespace }} get secret {{ include "hermesgate.secretName" . }} -o jsonpath="{.data.{{ .Values.config.existingSecretKey }}}" | base64 --decode
+  echo ""
+{{- else }}
+  Your Master Admin Token was generated automatically. Check the pod logs:
+  kubectl --namespace {{ .Release.Namespace }} logs -l "app.kubernetes.io/name={{ include "hermesgate.name" . }},app.kubernetes.io/instance={{ .Release.Name }}" | grep "Master Admin Token"
+{{- end }}
+
+3. Connecting Mobile Clients:
+  - Android: Install the APK, open settings, and enter the server URL and device pairing token (or scan QR from Web UI).
+  - iOS: Follow the Apple Shortcuts Automation guide in docs/IOS_GUIDE.md or open the Web UI to pair.
+
+4. Connecting AI Assistants (MCP):
+  - In the Web UI, go to "MCP / API Tokens", create an AI token with access to specific phone numbers, and copy the Claude Desktop or SSE configuration snippet!
+
+========================================================================

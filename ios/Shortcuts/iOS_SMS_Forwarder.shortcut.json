@@ -1,0 +1,16 @@
+{
+  "name": "Forward SMS to Rust Server",
+  "action": "URLSessionPost",
+  "method": "POST",
+  "endpoint": "/api/v1/sms/forward",
+  "headers": {
+    "Content-Type": "application/json",
+    "X-Device-Token": "<YOUR_DEVICE_TOKEN>"
+  },
+  "bodySchema": {
+    "recipient_number": "<YOUR_PHONE_NUMBER>",
+    "sender": "ShortcutInput.Sender",
+    "body": "ShortcutInput.Content",
+    "device_id": "iOS_Device"
+  }
+}

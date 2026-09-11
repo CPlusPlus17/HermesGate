@@ -1,0 +1,15 @@
+<resources>
+    <string name="app_name">HermesGate</string>
+    <string name="server_settings">Server &amp; Device Configuration</string>
+    <string name="server_url">Server URL</string>
+    <string name="device_token">Device Auth Token</string>
+    <string name="device_name">Device Name</string>
+    <string name="phone_number">Phone Number (Override)</string>
+    <string name="save_settings">Save Settings</string>
+    <string name="test_connection">Test Server</string>
+    <string name="send_test_sms">Send Test SMS</string>
+    <string name="battery_optimizations">Battery Optimization Settings</string>
+    <string name="enable_forwarding">Enable SMS Forwarding</string>
+    <string name="persistent_service">Keep Background Service Running</string>
+    <string name="forwarding_history">Forwarding History</string>
+</resources>

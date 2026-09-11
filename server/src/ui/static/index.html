@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HermesGate - Control Center</title>
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏛️</text></svg>">
+</head>
+<body class="dark-theme">
+  <div id="app">
+    <!-- Top Navigation Bar -->
+    <header class="navbar">
+      <div class="nav-brand">
+        <div class="brand-logo">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+        </div>
+        <div>
+          <h1 class="brand-title">HermesGate</h1>
+          <div class="brand-subtitle">AI & Automation Hub</div>
+        </div>
+      </div>
+
+      <div class="nav-search">
+        <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        <input type="text" id="searchInput" placeholder="Search sender, message, or OTP code...">
+      </div>
+
+      <div class="nav-actions">
+        <div id="connectionStatus" class="status-badge connecting" title="WebSocket status">
+          <span class="status-dot"></span>
+          <span class="status-text">Connecting...</span>
+        </div>
+        <button id="btnTestSms" class="btn btn-secondary">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+          Simulate SMS
+        </button>
+        <button id="btnDevices" class="btn btn-secondary">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
+          Devices & Pairing
+        </button>
+        <button id="btnTokens" class="btn btn-primary">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+          MCP / API Tokens
+        </button>
+        <button id="btnAuth" class="btn btn-outline" title="Switch or enter Admin Token">
+          <span id="authBadge">Admin Auth</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="main-content">
+      <!-- Sidebar / Numbers Filter -->
+      <aside class="sidebar">
+        <div class="sidebar-section">
+          <div class="section-header">
+            <h3>Phone Numbers</h3>
+            <span id="totalNumbersCount" class="counter-badge">0</span>
+          </div>
+          <div id="numbersList" class="numbers-nav">
+            <button class="number-item active" data-number="all">
+              <div class="number-info">
+                <span class="number-label">All Numbers</span>
+                <span class="number-val">All incoming streams</span>
+              </div>
+              <span id="allMsgCount" class="msg-badge">0</span>
+            </button>
+            <!-- Dynamically populated numbers -->
+          </div>
+        </div>
+
+        <div class="sidebar-section quick-stats">
+          <div class="stat-card">
+            <div class="stat-label">Total Messages</div>
+            <div id="statTotalMsgs" class="stat-val">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Active Devices</div>
+            <div id="statDevicesCount" class="stat-val">0</div>
+          </div>
+        </div>
+
+        <div class="sidebar-section mcp-helper">
+          <div class="helper-box">
+            <div class="helper-title">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+              AI & MCP Ready
+            </div>
+            <p>Connect Claude, Gemini, or custom agents with per-number granular permissions.</p>
+            <button id="btnQuickMcpGuide" class="btn-text">View Setup Guide &rarr;</button>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Central SMS Stream & OTP Highlights -->
+      <section class="feed-section">
+        <!-- OTP Highlight Banner (Shows up when OTPs are present) -->
+        <div id="otpSection" class="otp-container" style="display: none;">
+          <div class="otp-header">
+            <div class="otp-title">
+              <span class="pulse-indicator"></span>
+              <h3>Recent Verification Codes (2FA / OTP)</h3>
+            </div>
+            <span class="otp-sub">Auto-extracted for instant copy</span>
+          </div>
+          <div id="otpCards" class="otp-grid">
+            <!-- Dynamically inserted OTP cards -->
+          </div>
+        </div>
+
+        <!-- Live Feed Header -->
+        <div class="feed-header">
+          <div class="feed-title-wrap">
+            <h2 id="currentFeedTitle">All Messages</h2>
+            <span id="currentFeedSubtitle" class="feed-subtitle">Live real-time feed</span>
+          </div>
+          <div class="feed-tools">
+            <button id="btnRefresh" class="btn btn-icon" title="Reload messages">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+            </button>
+            <button id="btnClearFilters" class="btn btn-outline btn-sm" style="display:none;">Clear Filters</button>
+          </div>
+        </div>
+
+        <!-- Message List -->
+        <div id="messagesList" class="messages-container">
+          <div class="loading-placeholder">Loading messages...</div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Modal: Simulate Test SMS -->
+    <div id="testSmsModal" class="modal-backdrop">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h3>Simulate Incoming SMS</h3>
+          <button class="modal-close" data-close="testSmsModal">&times;</button>
+        </div>
+        <form id="testSmsForm" class="modal-body">
+          <div class="form-group">
+            <label for="simRecipient">Recipient Phone Number (Device / SIM)</label>
+            <input type="text" id="simRecipient" placeholder="+15551234567" required list="knownNumbersList">
+            <datalist id="knownNumbersList"></datalist>
+          </div>
+          <div class="form-group">
+            <label for="simSender">Sender Name or Number</label>
+            <input type="text" id="simSender" placeholder="Google, WhatsApp, +18005550199" required>
+          </div>
+          <div class="form-group">
+            <label for="simBody">Message Content</label>
+            <textarea id="simBody" rows="3" placeholder="Your verification code is 849201. Do not share this code." required></textarea>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="simSlot">SIM Slot</label>
+              <select id="simSlot">
+                <option value="0">SIM 1</option>
+                <option value="1">SIM 2</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="simDevice">Device ID</label>
+              <input type="text" id="simDevice" placeholder="web_simulator" value="web_simulator">
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-close="testSmsModal">Cancel</button>
+            <button type="submit" class="btn btn-primary">Send Test SMS</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal: Device Management & QR Pairing -->
+    <div id="devicesModal" class="modal-backdrop">
+      <div class="modal-card modal-lg">
+        <div class="modal-header">
+          <h3>Device Management & Mobile Pairing</h3>
+          <button class="modal-close" data-close="devicesModal">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="card-box mb-4">
+            <h4>Pair a New Android / iOS Device</h4>
+            <p class="text-muted">Generate a pairing token and scan the QR code in the Android app to connect immediately.</p>
+            <form id="addDeviceForm" class="form-row mt-3">
+              <input type="text" id="newDeviceName" placeholder="Device Name (e.g. Pixel 8, iPhone 15)" required class="flex-1">
+              <select id="newDevicePlatform">
+                <option value="android">Android</option>
+                <option value="ios">iOS (Shortcuts / App)</option>
+              </select>
+              <button type="submit" class="btn btn-primary">Generate Pairing QR</button>
+            </form>
+          </div>
+
+          <div id="newDeviceResult" class="pairing-box mb-4" style="display:none;">
+            <div class="qr-container">
+              <div id="deviceQrCanvas" class="qr-code"></div>
+            </div>
+            <div class="pairing-details">
+              <h4>Device Pairing Config</h4>
+              <p class="text-sm">Scan with the mobile app or copy these parameters:</p>
+              <div class="code-field">
+                <span class="code-label">Server URL:</span>
+                <code id="displayServerUrl"></code>
+              </div>
+              <div class="code-field">
+                <span class="code-label">Device Token:</span>
+                <code id="displayDeviceToken"></code>
+                <button class="btn-copy" id="btnCopyDevToken">Copy</button>
+              </div>
+            </div>
+          </div>
+
+          <h4>Registered Devices</h4>
+          <div id="devicesListContainer" class="table-responsive mt-2">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Device Name</th>
+                  <th>Platform</th>
+                  <th>Device ID</th>
+                  <th>Last Active</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="devicesTableBody">
+                <!-- Dynamically loaded -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: MCP & API Token Manager (Granular Permissions) -->
+    <div id="tokensModal" class="modal-backdrop">
+      <div class="modal-card modal-lg">
+        <div class="modal-header">
+          <h3>API & MCP Tokens (Granular Number Permissions)</h3>
+          <button class="modal-close" data-close="tokensModal">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="card-box mb-4">
+            <h4>Create New Token for AI (MCP) or Automation (REST)</h4>
+            <p class="text-muted">Grant access only to specific phone numbers or all numbers.</p>
+            <form id="createTokenForm" class="mt-3">
+              <div class="form-group">
+                <label for="tokenName">Token Description / Application</label>
+                <input type="text" id="tokenName" placeholder="e.g. Claude AI MCP, GitHub Action, Zapier" required>
+              </div>
+              <div class="form-group">
+                <label>Authorized Phone Numbers (Granular Access)</label>
+                <div class="checkbox-row mb-2">
+                  <label class="checkbox-label font-bold">
+                    <input type="checkbox" id="chkAllNumbers" checked>
+                    <span>Allow ALL Phone Numbers (Wildcard *)</span>
+                  </label>
+                </div>
+                <div id="numberCheckboxesGroup" class="number-checkbox-list" style="display:none;">
+                  <!-- Checkbox per number inserted here -->
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="checkbox-row">
+                  <label class="checkbox-label">
+                    <input type="checkbox" id="chkCanRead" checked>
+                    <span>Read Messages</span>
+                  </label>
+                </div>
+                <div class="checkbox-row">
+                  <label class="checkbox-label">
+                    <input type="checkbox" id="chkCanDelete">
+                    <span>Delete Messages</span>
+                  </label>
+                </div>
+                <div class="checkbox-row">
+                  <label class="checkbox-label">
+                    <input type="checkbox" id="chkIsAdmin">
+                    <span>Admin Privileges</span>
+                  </label>
+                </div>
+              </div>
+              <button type="submit" class="btn btn-primary mt-3">Generate Token</button>
+            </form>
+          </div>
+
+          <!-- Secret token display banner -->
+          <div id="tokenSecretBanner" class="alert-box alert-success mb-4" style="display:none;">
+            <div class="alert-title">New Token Generated!</div>
+            <p>Save this token now; you will not be able to see it again.</p>
+            <div class="secret-field mt-2">
+              <code id="createdSecretVal"></code>
+              <button id="btnCopyCreatedSecret" class="btn btn-sm btn-secondary">Copy Token</button>
+            </div>
+            <div class="mcp-snippets mt-3">
+              <h5>Quick Integration Snippets:</h5>
+              <div class="snippet-tabs">
+                <button class="tab-btn active" data-tab="tabClaude">Claude Desktop</button>
+                <button class="tab-btn" data-tab="tabCurl">cURL REST</button>
+              </div>
+              <pre id="snippetCode" class="snippet-pre"></pre>
+            </div>
+          </div>
+
+          <h4>Active Tokens</h4>
+          <div id="tokensListContainer" class="table-responsive mt-2">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Prefix</th>
+                  <th>Permitted Numbers</th>
+                  <th>Permissions</th>
+                  <th>Created</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="tokensTableBody">
+                <!-- Dynamically loaded -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Auth Token Input -->
+    <div id="authModal" class="modal-backdrop">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h3>Authentication Token</h3>
+          <button class="modal-close" data-close="authModal">&times;</button>
+        </div>
+        <form id="authForm" class="modal-body">
+          <p class="text-muted">Enter your Master Admin Token to manage devices, tokens, and view all streams.</p>
+          <div class="form-group mt-3">
+            <label for="adminTokenInput">Bearer Token</label>
+            <input type="password" id="adminTokenInput" placeholder="sms_adm_..." required>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-close="authModal">Cancel</button>
+            <button type="submit" class="btn btn-primary">Save Token</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal: MCP Quick Setup Guide -->
+    <div id="mcpGuideModal" class="modal-backdrop">
+      <div class="modal-card modal-lg">
+        <div class="modal-header">
+          <h3>Model Context Protocol (MCP) Setup Guide</h3>
+          <button class="modal-close" data-close="mcpGuideModal">&times;</button>
+        </div>
+        <div class="modal-body text-content">
+          <h4>What is MCP?</h4>
+          <p>The Model Context Protocol (MCP) lets AI agents (like Claude, Antigravity, or Gemini) securely read SMS and extract 2FA codes from your phone numbers in real time.</p>
+          
+          <h4 class="mt-4">Option 1: Claude Desktop Integration (Stdio Mode)</h4>
+          <p>Add the following to your <code>claude_desktop_config.json</code>:</p>
+          <pre id="claudeDesktopConfigPre" class="snippet-pre"></pre>
+
+          <h4 class="mt-4">Option 2: Remote MCP (SSE Stream)</h4>
+          <p>For remote clients connecting to your server URL:</p>
+          <pre class="snippet-pre">SSE URL: <span id="mcpSseUrlExample">http://&lt;host&gt;:8080/mcp/sse?token=&lt;YOUR_TOKEN&gt;</span></pre>
+
+          <h4 class="mt-4">Available AI Tools</h4>
+          <ul>
+            <li><code>list_allowed_numbers</code>: Lists phone numbers permitted for this AI.</li>
+            <li><code>get_latest_otp</code>: Fetches the latest 2FA/OTP code received within the last 10 minutes.</li>
+            <li><code>get_latest_messages</code>: Gets recent messages for permitted numbers.</li>
+            <li><code>search_messages</code>: Searches by text or sender.</li>
+            <li><code>get_message_details</code>: Reads full message with metadata.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toastContainer" class="toast-container"></div>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>

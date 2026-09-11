@@ -1,0 +1,11 @@
+target/
+*.db
+*.db-shm
+*.db-wal
+.gradle/
+build/
+android/app/build/
+local.properties
+.DS_Store
+*.apk
+.nodeterm/
